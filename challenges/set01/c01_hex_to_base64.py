@@ -1,8 +1,8 @@
 from cryptopals.conversions import from_hex, to_base64
 
 
-def solve(hex: str) -> str:
-    return to_base64(from_hex(hex))
+def solve(s: str) -> str:
+    return to_base64(from_hex(s))
 
 
 if __name__ == "__main__":

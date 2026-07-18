@@ -2,8 +2,8 @@ from cryptopals.conversions import from_hex, to_hex
 from cryptopals.xor import xor
 
 
-def solve(input, comparison):
-    result = xor(from_hex(input), from_hex(comparison))
+def solve(s: str, comparison: str) -> str:
+    result = xor(from_hex(s), from_hex(comparison))
     return to_hex(result)
 
 
