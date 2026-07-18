@@ -1,0 +1,46 @@
+[project]
+name = "cryptopals"
+version = "0.1.0"
+description = "Cryptopals challenges, re-done on modern Python + tooling."
+readme = "README.md"
+authors = [
+    { name = "Matt Tenenbaum", email = "tenenmatt@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.11.27,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+# Only the library is regression-tested. Challenge scripts self-check via inline
+# asserts when run directly and are deliberately NOT collected here.
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+# The library and its tests are held to the lint rules; add "challenges" here
+# later if you want scripts linted too.
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# A pragmatic starting set: pyflakes/pycodestyle errors, import sorting,
+# pyupgrade (modern-syntax nudges -- useful for the "fully updated Python" goal),
+# and flake8-bugbear. Trim or grow as you learn what's noise vs. signal.
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ty]
+# ty auto-discovers the project (src layout + .venv) from pyproject.toml, so no
+# config is required to start. Add [tool.ty.rules] overrides here if a specific
+# diagnostic gets in your way while learning.
+
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.156.6",
+    "pytest>=9.1.1",
+    "ruff>=0.15.22",
+]
