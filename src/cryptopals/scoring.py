@@ -86,8 +86,8 @@ def n_grams(text: bytes, n: int = 1) -> list[bytes]:
     return [text[i : i + n] for i in range(len(text) - n + 1)]
 
 
-def count_letter_frequencies(
-    text: bytes, n: int = 1, freq_ref=COMMON_LETTER_FREQUENCIES
+def count_frequencies(
+    text: bytes, n: int = 1, freq_ref: Mapping[bytes, float] = COMMON_LETTER_FREQUENCIES
 ) -> dict[bytes, int]:
     """Count n-gram frequencies in text"""
     # consolidate case, since frequencies are lowercase
@@ -115,19 +115,10 @@ def cosine_similarity(a: Mapping[bytes, float], b: Mapping[bytes, float]) -> flo
     return dot / (math.sqrt(a_mag) * math.sqrt(b_mag))
 
 
-# def score_unigrams(text: bytes) -> float:
-#     # make this generic for n-grams by changing count_letter_frequencies
-#     # to take an n-gram size and the corresponding reference freqs
-#     # (which can then also be passed to cosine similarity)
-#     freq = count_letter_frequencies(text)
-#     return cosine_similarity(freq, COMMON_LETTER_FREQUENCIES)
-#
-
-
 def score_ngrams(
     text: bytes, n: int = 1, freq_ref: Mapping[bytes, float] = COMMON_LETTER_FREQUENCIES
 ) -> float:
-    freq = count_letter_frequencies(text, n, freq_ref)
+    freq = count_frequencies(text, n, freq_ref)
     return cosine_similarity(freq, freq_ref)
 
 
