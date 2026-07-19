@@ -29,8 +29,14 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 # A pragmatic starting set: pyflakes/pycodestyle errors, import sorting,
 # pyupgrade (modern-syntax nudges -- useful for the "fully updated Python" goal),
-# and flake8-bugbear. Trim or grow as you learn what's noise vs. signal.
-select = ["E", "F", "I", "UP", "B"]
+# flake8-bugbear, and flake8-builtins (A -- flags args/vars shadowing builtins
+# like `hex`/`input`). Trim or grow as you learn what's noise vs. signal.
+select = ["E", "F", "I", "UP", "B", "A"]
+
+[tool.ruff.lint.per-file-ignores]
+# Challenge scripts are mostly long data literals (hex/base64 vectors); E501 on
+# data is noise, not signal. Real code (src, tests) still gets line-length checks.
+"challenges/**" = ["E501"]
 
 [tool.ty]
 # ty auto-discovers the project (src layout + .venv) from pyproject.toml, so no
