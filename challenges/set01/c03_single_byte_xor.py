@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from cryptopals.xor import xor
 from cryptopals.conversions import from_hex
-from cryptopals.scoring import score_unigrams
+from cryptopals.scoring import score_unigrams, score_bigrams, score_log_freqs
 
 
 @dataclass(frozen=True)
@@ -18,7 +18,9 @@ def single_key_xor(b: bytes, key: int) -> bytes:
 
 
 def score(text: bytes) -> float:
-    return score_unigrams(text)
+    # return score_unigrams(text)
+    # return score_bigrams(text)
+    return score_log_freqs(text)
 
 
 def solve(cipher: str) -> list[Scored]:
