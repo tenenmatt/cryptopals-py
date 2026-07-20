@@ -1,7 +1,8 @@
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
-from cryptopals.conversions import from_hex, to_hex, from_base64, to_base64
+from cryptopals.conversions import from_base64, from_hex, to_base64, to_hex
 
 
 @pytest.mark.parametrize(

@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from cryptopals.xor import xor
+
 from cryptopals.conversions import from_hex
-from cryptopals.scoring import score_unigrams, score_bigrams, score_log_freqs
+from cryptopals.scoring import score_log_freqs
+from cryptopals.xor import xor
 
 
 @dataclass(frozen=True)

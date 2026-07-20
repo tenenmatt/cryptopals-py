@@ -1,6 +1,6 @@
+import math
 from collections import Counter
 from collections.abc import Mapping
-import math
 
 
 def normalize_frequency_table(freqs: Mapping[bytes, float]) -> Mapping[bytes, float]:
