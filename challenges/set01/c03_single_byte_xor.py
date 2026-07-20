@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from cryptopals.conversions import from_hex
 from cryptopals.scoring import score_log_freqs
-from cryptopals.xor import xor
+from cryptopals.xor import single_key_xor
 
 
 @dataclass(frozen=True)
@@ -10,12 +10,6 @@ class Scored:
     key: bytes
     score: float
     text: bytes
-
-
-def single_key_xor(b: bytes, key: int) -> bytes:
-    # build rhs to xor with b
-    fixed_bytes = bytes([key] * len(b))
-    return xor(b, fixed_bytes)
 
 
 def score(text: bytes) -> float:
