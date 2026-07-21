@@ -147,7 +147,7 @@ def score_log_freqs(
     lower_text = text.lower()
     score = 0
     num_grams = 0  # for normalizing length
-    missing_freq = min(freq_ref.values()) / 2
+    missing_freq = min(freq_ref.values()) / 4
     for gram in n_grams(lower_text, n):
         freq = freq_ref.get(gram, missing_freq)
         num_grams += 1

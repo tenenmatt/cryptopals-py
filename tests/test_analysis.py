@@ -1,4 +1,4 @@
-from cryptopals.analysis import rank_single_byte_xor
+from cryptopals.analysis import hamming, rank_single_byte_xor
 from cryptopals.xor import single_key_xor
 
 
@@ -24,3 +24,7 @@ def test_ranking_uses_scorer():
 
     best = rank_single_byte_xor(cipher, score=biased)[0]
     assert best.key == 0x42
+
+
+def test_hamming():
+    assert hamming(b"this is a test", b"wokka wokka!!!") == 37
