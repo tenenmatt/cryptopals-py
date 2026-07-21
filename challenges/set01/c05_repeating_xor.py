@@ -5,9 +5,9 @@ from cryptopals.xor import repeating_xor
 def solve(cleartext: str, key: bytes) -> str:
     # assumes we're always working with ascii
     b = cleartext.encode("ascii")
-    xor = repeating_xor(b, key)
+    cipher = repeating_xor(b, key)
     # expect output as hex string
-    return to_hex(xor)
+    return to_hex(cipher)
 
 
 if __name__ == "__main__":
