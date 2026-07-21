@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from cryptopals.analysis import rank_single_byte_xor
 from cryptopals.conversions import from_hex
-from cryptopals.scoring import score_log_freqs
-from cryptopals.xor import single_key_xor
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -16,21 +15,11 @@ class Scored:
     text: bytes
 
 
-def score(text: bytes) -> float:
-    return score_log_freqs(text)
-
-
 def candidates(cipher: str) -> list[Scored]:
     """Return single-byte xor decodings for this cipher"""
     cipher_bytes = from_hex(cipher)
-    results = []
-    for key in range(256):
-        cleartext = single_key_xor(cipher_bytes, key)
-        # coerce back to byte literal for Scored.key
-        results.append(
-            Scored(key=bytes([key]), source=cipher, score=score(cleartext), text=cleartext)
-        )
-    return results
+    ranked = rank_single_byte_xor(cipher_bytes)
+    return [Scored(bytes([c.key]), cipher, c.score, c.plaintext) for c in ranked]
 
 
 def solve(data_path: Path) -> list[Scored]:

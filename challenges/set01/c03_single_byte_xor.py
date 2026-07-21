@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 
+from cryptopals.analysis import rank_single_byte_xor
 from cryptopals.conversions import from_hex
-from cryptopals.scoring import score_log_freqs
-from cryptopals.xor import single_key_xor
 
 
 @dataclass(frozen=True)
@@ -12,21 +11,11 @@ class Scored:
     text: bytes
 
 
-def score(text: bytes) -> float:
-    # return score_unigrams(text)
-    # return score_bigrams(text)
-    return score_log_freqs(text)
-
-
 def solve(cipher: str) -> list[Scored]:
     cipher_bytes = from_hex(cipher)
-    candidates = []
-    # test every possible single-byte key
-    for key in range(256):
-        cleartext = single_key_xor(cipher_bytes, key)
-        # coerce key back to byte literal
-        candidates.append(Scored(key=bytes([key]), score=score(cleartext), text=cleartext))
-    return sorted(candidates, key=lambda x: x.score, reverse=True)
+    candidates = rank_single_byte_xor(cipher_bytes)
+    # translate results into Scored
+    return [Scored(bytes([c.key]), c.score, c.plaintext) for c in candidates]
 
 
 if __name__ == "__main__":
