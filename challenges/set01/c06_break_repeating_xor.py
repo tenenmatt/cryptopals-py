@@ -33,7 +33,6 @@ def estimate_key_size(
     candidates = []
     for n in range(min_size, max_size):
         # get the first few chunks of size n (count controlled by `samples` arg)
-        # chunks = [bytes(x) for x in islice(batched(cipher, n), 0, samples)]
         grouped = (bytes(x) for x in batched(cipher, n, strict=False))
         chunks = list(islice(grouped, 0, samples))
 
@@ -63,15 +62,9 @@ def solve(cipher: bytes) -> list[Decoded]:
 
 
 if __name__ == "__main__":
-    # TODO try solve() on hand-made data where we know the key up front?
     challenge_file = DATA_DIR / "1.6.txt"
     challenge_data = read_challenge_data(challenge_file)
     result = solve(challenge_data)
-
-    # hand-made data
-    # example_cleartext = b"This is just some example text that we can use to debug things"
-    # ciphertext = repeating_xor(example_cleartext, b"abc")
-    # result = solve(ciphertext)
 
     for r in result[:1]:
         print(f"Key = {r.key} (score: {r.score}")
