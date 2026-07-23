@@ -1,4 +1,6 @@
+from collections import Counter
 from collections.abc import Callable
+from itertools import batched
 from typing import NamedTuple
 
 from cryptopals.scoring import score_log_freqs
@@ -21,3 +23,12 @@ def rank_single_byte_xor(
 
 def hamming(a: bytes, b: bytes) -> int:
     return sum((ai ^ bi).bit_count() for ai, bi in zip(a, b, strict=True))
+
+
+def detect_ecb(cipher: bytes) -> float:
+    blocks = batched(cipher, 16, strict=True)
+    counts = Counter(blocks)
+    # return the max repeated blocks, normalized by cipher length
+    most_frequent = max(counts.values())
+    num_blocks = len(cipher) / 16
+    return most_frequent / num_blocks
