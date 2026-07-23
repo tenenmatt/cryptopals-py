@@ -2,11 +2,18 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from cryptopals.aes import aes_ecb_decrypt, aes_ecb_encrypt, pad_block
+from cryptopals.aes import (
+    aes_cbc_decrypt,
+    aes_cbc_encrypt,
+    aes_ecb_decrypt,
+    aes_ecb_encrypt,
+    pad_block,
+)
 
 # assumes we're working on full (16 byte) blocks
 blocks = st.lists(st.binary(min_size=16, max_size=16)).map(b"".join)
 keys = st.binary(min_size=16, max_size=16)
+ivs = st.binary(min_size=16, max_size=16)
 
 
 # test that decrypt(encrypt(x)) == x
@@ -52,3 +59,9 @@ def test_padding_full_produces_extra_block():
 )
 def test_padding_custom_sizes(block, size, padding):
     assert pad_block(block, size) == block + padding
+
+
+# test CBC decrypt(encrypt(x)) == x
+@given(blocks, keys, ivs)
+def test_cbc_round_trip(text, key, iv):
+    assert aes_cbc_decrypt(aes_cbc_encrypt(text, key, iv), key, iv) == text
