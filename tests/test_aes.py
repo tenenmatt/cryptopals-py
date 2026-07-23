@@ -1,7 +1,8 @@
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from cryptopals.aes import aes_ecb_decrypt, aes_ecb_encrypt
+from cryptopals.aes import aes_ecb_decrypt, aes_ecb_encrypt, pad_block
 
 # assumes we're working on full (16 byte) blocks
 blocks = st.lists(st.binary(min_size=16, max_size=16)).map(b"".join)
@@ -28,3 +29,26 @@ def test_ecb_blocks_are_deterministic():
     # two copies of a block [0..15]
     cipher = aes_ecb_encrypt(bytes(range(16)) * 2, key)
     assert cipher[:16] == cipher[16:]
+
+
+def test_padding_default_size():
+    short = bytes(14)
+    observed = pad_block(short)
+    expected = bytes(14) + b"\x02\x02"
+    assert observed == expected
+
+
+def test_padding_full_produces_extra_block():
+    """An input that's already at the block size pads with a full additional block"""
+    assert pad_block(bytes(16)) == bytes(16) + bytes([16] * 16)
+
+
+@pytest.mark.parametrize(
+    "block, size, padding",
+    [
+        (bytes(16), 20, b"\x04\x04\x04\x04"),
+        (bytes(8), 11, b"\x03\x03\x03"),
+    ],
+)
+def test_padding_custom_sizes(block, size, padding):
+    assert pad_block(block, size) == block + padding

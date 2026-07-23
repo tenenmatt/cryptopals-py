@@ -1,4 +1,4 @@
-from cryptopals.analysis import pad_block
+from cryptopals.aes import pad_block
 
 
 def solve(block: bytes, size: int):

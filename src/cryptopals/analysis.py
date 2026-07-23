@@ -32,13 +32,3 @@ def detect_ecb(cipher: bytes) -> float:
     most_frequent = max(counts.values())
     num_blocks = len(cipher) / 16
     return most_frequent / num_blocks
-
-
-def pad_block(block: bytes, size: int = 16) -> bytes:
-    block_length = len(block)
-    if block_length > size:
-        raise ValueError("Block is larger than padding target")
-    missing = size - block_length
-    # PKCS#7 pads with the constant value that's the number of missing bytes
-    # eg, if a block is missing 5 bytes, it'd be padded with `b"\05" * 5`
-    return block + bytes([missing] * missing)
