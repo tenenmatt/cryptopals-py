@@ -1,6 +1,7 @@
 import pytest
 
-from cryptopals.analysis import hamming, rank_single_byte_xor
+from cryptopals.aes import aes_ecb_encrypt
+from cryptopals.analysis import hamming, max_repeated_blocks, rank_single_byte_xor
 from cryptopals.xor import single_key_xor
 
 
@@ -30,3 +31,10 @@ def test_ranking_uses_scorer():
 
 def test_hamming():
     assert hamming(b"this is a test", b"wokka wokka!!!") == 37
+
+
+def test_counting_max_repeated_blocks():
+    repeating = b"a" * 32
+    nonrepeating = b"a" * 16 + b"b" * 16
+    assert max_repeated_blocks(repeating) == 2
+    assert max_repeated_blocks(nonrepeating) == 1

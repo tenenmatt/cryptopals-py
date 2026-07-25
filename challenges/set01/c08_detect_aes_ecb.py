@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import NamedTuple
 
-from cryptopals.analysis import detect_ecb
+from cryptopals.analysis import detect_ecb, max_repeated_blocks
 from cryptopals.conversions import from_hex
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -22,7 +22,7 @@ def solve(path: Path) -> Line:
         Line(
             i,
             text,
-            detect_ecb(text),
+            max_repeated_blocks(text),
         )
         for i, text in enumerate(read_challenge_data(path))
     ]

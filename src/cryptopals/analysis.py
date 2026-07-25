@@ -1,3 +1,4 @@
+import os
 from collections import Counter
 from collections.abc import Callable
 from itertools import batched
@@ -25,10 +26,18 @@ def hamming(a: bytes, b: bytes) -> int:
     return sum((ai ^ bi).bit_count() for ai, bi in zip(a, b, strict=True))
 
 
-def detect_ecb(cipher: bytes) -> float:
+def max_repeated_blocks(cipher: bytes) -> int:
     blocks = batched(cipher, 16, strict=True)
     counts = Counter(blocks)
-    # return the max repeated blocks, normalized by cipher length
     most_frequent = max(counts.values())
+    return most_frequent
+
+
+def detect_ecb(cipher: bytes) -> float:
+    most_frequent = max_repeated_blocks(cipher)
     num_blocks = len(cipher) / 16
     return most_frequent / num_blocks
+
+
+def random_bytes(n: int = 16) -> bytes:
+    return os.urandom(n)
