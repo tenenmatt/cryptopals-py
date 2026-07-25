@@ -1,9 +1,11 @@
 import os
+import textwrap
 from collections import Counter
 from collections.abc import Callable
 from itertools import batched
 from typing import NamedTuple
 
+from cryptopals.conversions import to_hex
 from cryptopals.scoring import score_log_freqs
 from cryptopals.xor import single_key_xor
 
@@ -33,6 +35,10 @@ def max_repeated_blocks(cipher: bytes) -> int:
     return most_frequent
 
 
+def is_ecb(cipher: bytes) -> bool:
+    return max_repeated_blocks(cipher) >= 2
+
+
 def detect_ecb(cipher: bytes) -> float:
     most_frequent = max_repeated_blocks(cipher)
     num_blocks = len(cipher) / 16
@@ -41,3 +47,23 @@ def detect_ecb(cipher: bytes) -> float:
 
 def random_bytes(n: int = 16) -> bytes:
     return os.urandom(n)
+
+
+def block_list(text: bytes) -> list[bytes]:
+    return list(bytes(x) for x in batched(text, 16, strict=True))
+
+
+def pprint(text: bytes):
+    # print 8 columns (16 bytes)
+    width = 8 * 4 + 7
+    pretty = textwrap.fill(to_hex(text, True), width)
+    print(pretty)
+
+
+# assumes ECB? also assumes 16-byte block, for now
+def unpadded_oracle_secret_length(oracle: Callable[[bytes], bytes]) -> int:
+    initial_length = len(oracle(b""))
+    for b in range(16):
+        if len(oracle(bytes(b + 1))) > initial_length:
+            return initial_length - (b + 1)
+    raise ValueError("No change in oracle output. Maybe it isn't padding?")

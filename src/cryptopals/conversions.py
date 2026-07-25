@@ -6,8 +6,10 @@ def from_hex(s: str) -> bytes:
     return bytes.fromhex(s)
 
 
-def to_hex(b: bytes) -> str:
+def to_hex(b: bytes, pretty=False) -> str:
     """Render bytes as hex string"""
+    if pretty:
+        return b.hex(" ", 2)
     return b.hex()
 
 

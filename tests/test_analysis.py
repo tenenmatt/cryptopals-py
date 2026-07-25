@@ -1,7 +1,14 @@
+from collections.abc import Callable
+
 import pytest
 
-from cryptopals.aes import aes_ecb_encrypt
-from cryptopals.analysis import hamming, max_repeated_blocks, rank_single_byte_xor
+from cryptopals.aes import aes_ecb_encrypt, pad_block
+from cryptopals.analysis import (
+    hamming,
+    max_repeated_blocks,
+    rank_single_byte_xor,
+    unpadded_oracle_secret_length,
+)
 from cryptopals.xor import single_key_xor
 
 
@@ -38,3 +45,21 @@ def test_counting_max_repeated_blocks():
     nonrepeating = b"a" * 16 + b"b" * 16
     assert max_repeated_blocks(repeating) == 2
     assert max_repeated_blocks(nonrepeating) == 1
+
+
+def oracle_maker(secret: bytes) -> Callable[[bytes], bytes]:
+    def oracle(text: bytes) -> bytes:
+        return pad_block(text + secret)
+
+    return oracle
+
+
+def test_unpadding_oracle():
+    full_block = oracle_maker(bytes(16))
+    assert unpadded_oracle_secret_length(full_block) == 16
+
+    half_block = oracle_maker(bytes(8))
+    assert unpadded_oracle_secret_length(half_block) == 8
+
+    quarter_block = oracle_maker(bytes(4))
+    assert unpadded_oracle_secret_length(quarter_block) == 4
