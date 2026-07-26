@@ -1,7 +1,7 @@
 from collections.abc import Callable
 
 from cryptopals.aes import aes_ecb_encrypt, pad_block
-from cryptopals.analysis import block_list, pprint, random_bytes, unpadded_oracle_secret_length
+from cryptopals.analysis import block_list, random_bytes, unpadded_oracle_secret_length
 from cryptopals.conversions import from_base64
 
 SECRET = """
@@ -13,7 +13,6 @@ YnkK
 
 # Define this as a global so it's consisent across all invocations
 SECRET_KEY = random_bytes(16)
-ONE_BYTE_SHORT = b"A" * 15
 
 
 def encryption_oracle(plaintext: bytes) -> bytes:
@@ -43,14 +42,14 @@ def solve(oracle: Callable[[bytes], bytes]) -> bytes:
 
         forced_block = block_list(oracle(prefix))[target_block]
         if forced_block not in lookup:
-            print(
-                f"!!! did not find block ({target_block}) in lookup (i={i}/{len_unknown}); uncovered = {cleartext}"
+            raise ValueError(
+                f"Ciphertext block ({target_block}) matched no candidate at byte {i} (of {len_unknown})"
             )
         uncovered = lookup[forced_block]
         # add the newly uncovered byte to our cleartext
         cleartext += uncovered
         # update the most recent 15 uncovered bytes
-        known = bytes(list(known)[1:]) + uncovered
+        known = known[1:] + uncovered
     return cleartext
 
 
