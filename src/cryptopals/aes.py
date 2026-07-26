@@ -1,4 +1,4 @@
-from itertools import batched, pairwise
+from itertools import batched
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 

@@ -1,8 +1,6 @@
 from collections.abc import Callable
 
-import pytest
-
-from cryptopals.aes import aes_ecb_encrypt, pad_block
+from cryptopals.aes import pad_block
 from cryptopals.analysis import (
     hamming,
     max_repeated_blocks,

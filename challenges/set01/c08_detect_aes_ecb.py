@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import NamedTuple
 
-from cryptopals.analysis import detect_ecb, max_repeated_blocks
+from cryptopals.analysis import max_repeated_blocks
 from cryptopals.conversions import from_hex
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
