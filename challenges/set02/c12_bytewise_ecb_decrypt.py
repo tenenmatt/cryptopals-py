@@ -20,12 +20,12 @@ def encryption_oracle(plaintext: bytes) -> bytes:
     return aes_ecb_encrypt(plaintext, SECRET_KEY)
 
 
-def last_byte_lookup_table(known: bytes) -> dict[bytes, bytes]:
+def last_byte_lookup_table(oracle: Callable[[bytes], bytes], known: bytes) -> dict[bytes, bytes]:
     lookup = {}
     for b in range(256):
         block = known + bytes([b])
         # get first block of ciphertext
-        cipher = encryption_oracle(block)[:16]
+        cipher = oracle(block)[:16]
         lookup[cipher] = bytes([b])
     return lookup
 
@@ -35,7 +35,7 @@ def solve(oracle: Callable[[bytes], bytes]) -> bytes:
     known = b"A" * 15
     len_unknown = unpadded_oracle_secret_length(oracle)
     for i in range(len_unknown):
-        lookup = last_byte_lookup_table(known)
+        lookup = last_byte_lookup_table(oracle, known)
         offset = 16 - (1 + (len(cleartext) % 16))
         prefix = b"A" * offset
         target_block = len(cleartext) // 16
