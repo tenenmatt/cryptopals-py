@@ -1,9 +1,13 @@
 from collections.abc import Callable
 
+import pytest
+
 from cryptopals.aes import pad_block
 from cryptopals.analysis import (
+    first_repeated_block_index,
     hamming,
     max_repeated_blocks,
+    random_bytes,
     rank_single_byte_xor,
     unpadded_oracle_secret_length,
 )
@@ -61,3 +65,18 @@ def test_unpadding_oracle():
 
     quarter_block = oracle_maker(bytes(4))
     assert unpadded_oracle_secret_length(quarter_block) == 4
+
+
+def test_first_repeated_block_index():
+    repeated = b"A" * 16 * 3
+    empty_prefix = pad_block(b"" + repeated)
+    assert first_repeated_block_index(empty_prefix) == 0
+
+    within_first = pad_block(random_bytes(10) + repeated)
+    assert first_repeated_block_index(within_first) == 1
+
+    within_second = pad_block(random_bytes(19) + repeated)
+    assert first_repeated_block_index(within_second) == 2
+
+    nonrepeating = pad_block(random_bytes(42))
+    assert first_repeated_block_index(nonrepeating) is None

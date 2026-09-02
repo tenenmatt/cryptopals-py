@@ -2,7 +2,8 @@ import os
 import textwrap
 from collections import Counter
 from collections.abc import Callable
-from itertools import batched
+from itertools import batched, pairwise
+from types import NoneType
 from typing import NamedTuple
 
 from cryptopals.conversions import to_hex
@@ -43,6 +44,14 @@ def detect_ecb(cipher: bytes) -> float:
     most_frequent = max_repeated_blocks(cipher)
     num_blocks = len(cipher) / 16
     return most_frequent / num_blocks
+
+
+def first_repeated_block_index(text: bytes) -> int | NoneType:
+    blocks = block_list(text)
+    for i, (curr, succ) in enumerate(pairwise(blocks)):
+        if curr == succ:
+            return i
+    return None
 
 
 def random_bytes(n: int = 16) -> bytes:
