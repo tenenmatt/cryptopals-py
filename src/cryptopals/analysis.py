@@ -73,6 +73,9 @@ def pprint(text: bytes):
 # assumes ECB? also assumes 16-byte block, for now
 def unpadded_oracle_secret_length(oracle: Oracle) -> int:
     initial_length = len(oracle(b""))
+    # How many bytes must we inject before the number of blocks change?
+    # That tells us how much the padding is adding to
+    # the overall length to ensure complete blocks.
     for b in range(16):
         if len(oracle(bytes(b + 1))) > initial_length:
             return initial_length - (b + 1)
@@ -97,8 +100,26 @@ def oracle_without_prefix(oracle: Oracle, len_prefix: int) -> Oracle:
 
 
 def prefix_length(oracle: Oracle) -> int:
-    """Determine length of the random prefix prepended by the provided oracle."""
+    """
+    Determine length of the random prefix prepended by the provided oracle.
+
+    Because we use a repeated-character attack probe to find the edge of the prefix,
+    this can be confounded if the prefix happens to have a trailing partial block
+    identical to that probe character. That's unlikely with a random prefix, but 256^-(len%16),
+    so 1/256 when len(prefix) % 16 = 1.
+
+    This will also break down if the prefix contains at least two identical blocks,
+    which will give our edge-detection a false-positive. That's
+    exceedingly unlikely, but not impossible.
+
+    Refine, if we run into problems.
+    """
     for i in range(16):
+        # Using two probes (eg, repeated b"A" and repeated b"B") and checking
+        # for agreement would help guard against a prefix with a trailing
+        # b"A" block. But we'll have to do something else entirely if the
+        # prefix happens to contain two full blocks of any single byte,
+        # which would confound first_repeated_block_index.
         attack = b"A" * (32 + i)
         repeat = first_repeated_block_index(oracle(attack))
         if repeat is not None:
