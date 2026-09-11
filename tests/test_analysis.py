@@ -1,16 +1,21 @@
 import pytest
 
-from cryptopals.aes import pad_block
+from cryptopals.aes import aes_ecb_encrypt, pad_block
 from cryptopals.analysis import (
     Oracle,
+    break_ecb_suffix,
     first_repeated_block_index,
     hamming,
     max_repeated_blocks,
+    oracle_without_prefix,
+    prefix_length,
     random_bytes,
     rank_single_byte_xor,
     unpadded_oracle_secret_length,
 )
 from cryptopals.xor import single_key_xor
+
+SECRET = b"this is just a random test string"
 
 
 def test_recovers_single_byte_key():
@@ -48,9 +53,17 @@ def test_counting_max_repeated_blocks():
     assert max_repeated_blocks(nonrepeating) == 1
 
 
-def oracle_maker(secret: bytes) -> Oracle:
+def oracle_maker(
+    secret: bytes,
+    prefix: bytes = b"",
+    secret_key: bytes | None = None,
+) -> Oracle:
+    if secret_key is None:
+        secret_key = random_bytes(16)
+
     def oracle(text: bytes) -> bytes:
-        return pad_block(text + secret)
+        content = prefix + text + secret
+        return aes_ecb_encrypt(pad_block(content), secret_key)
 
     return oracle
 
@@ -79,3 +92,45 @@ def test_first_repeated_block_index():
 
     nonrepeating = pad_block(random_bytes(42))
     assert first_repeated_block_index(nonrepeating) is None
+
+
+@pytest.mark.parametrize("len_prefix", range(43))
+def test_prefix_length(len_prefix: int):
+    # use deterministic prefix to avoid _value_ confounding measurement of length.
+    # (but we can't use a long _repeated_ string, because that's our detection mechanism:
+    # a repeated sequence of a given character)
+    prefix = bytes(range(len_prefix))
+    assert len_prefix == prefix_length(oracle_maker(SECRET, prefix))
+
+
+# Challenge 14 differs from 12 in that we must negate the impact of a hidden prefix.
+# This verifies that we can transform the prefixing oracle into an oracle without one.
+@pytest.mark.parametrize("len_prefix", range(43))
+def test_removing_oracle_prefix(len_prefix: int):
+    secret_key = random_bytes()
+    random_prefix = random_bytes(len_prefix)
+
+    # an oracle without a prefix
+    unprefixed_oracle = oracle_maker(SECRET, secret_key=secret_key)
+    # an oracle with prefix (RANDOM_PREFIX)
+    prefixed_oracle = oracle_maker(SECRET, random_prefix, secret_key)
+
+    # an oracle that ignores the prefix
+    stripped = oracle_without_prefix(prefixed_oracle, len_prefix)
+
+    plaintext = b"this is the string we control"
+
+    # stripped oracle should match the original no-prefix for a given plaintext
+    assert unprefixed_oracle(plaintext) == stripped(plaintext)
+
+
+# This is the core logic for challenges 12 and 14
+#
+# We want secrets of lengths between 0..48, to flush
+# issues sensitive to block boundaries.
+@pytest.mark.parametrize("len_secret", range(49))
+def test_break_ecb_suffix(len_secret: int):
+    secret = random_bytes(len_secret)
+    oracle = oracle_maker(secret)
+    result = break_ecb_suffix(oracle)
+    assert result == secret

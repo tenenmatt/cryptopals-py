@@ -84,11 +84,20 @@ def unpadded_oracle_secret_length(oracle: Oracle) -> int:
 
 def oracle_without_prefix(oracle: Oracle, len_prefix: int) -> Oracle:
     """
-    Transform an oracle so that it ignores full blocks containing a prefix
-    of the specified length.
+    Transform an oracle of the form ECB(prefix + plaintext + suffix)
+    into one that ignores the prefix, equivalent to ECB(plaintext + suffix).
+
+    This DOES NOT VALIDATE that len_prefix == len(prefix). If that's wrong,
+    the resulting oracle will lie!
+
+    Important notes:
+    - This assumes 16 byte blocks.
+    - The new oracle will modify its plaintext to ensure block alignment
+      (necessary to satisfy byte-for-byte equivalence with an unprefixed oracle).
 
     """
-    # be careful not to append a wasted extra block prefix is already at a boundary
+    # be careful not to append a wasted extra block if prefix is already at a boundary
+    # (extra `% 16` ensures that we fill 0 rather than 16 when len_prefix is a block multiple)
     fill = (16 - (len_prefix % 16)) % 16
     ignored_bytes = len_prefix + fill
 
