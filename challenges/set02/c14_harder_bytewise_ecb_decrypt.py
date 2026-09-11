@@ -3,7 +3,7 @@ import random
 from cryptopals.aes import aes_ecb_encrypt, pad_block
 from cryptopals.analysis import (
     break_ecb_suffix,
-    cut_prefix_oracle,
+    oracle_without_prefix,
     prefix_length,
     random_bytes,
 )
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # Convert challenge 14 oracle into the oracle from 12, by using prefix_length to work out the size
     # of the random (hidden) prefix and then ignoring the blocks that contain that prefix.
     # The resulting oracle produces ciphertext starting with the plaintext it's called with (just like 12).
-    oracle = cut_prefix_oracle(encryption_oracle, prefix_length(encryption_oracle))
+    oracle = oracle_without_prefix(encryption_oracle, prefix_length(encryption_oracle))
     result = break_ecb_suffix(oracle)
     print("cleartext ->")
     print(result)

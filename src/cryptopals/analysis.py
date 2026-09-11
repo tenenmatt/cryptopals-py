@@ -79,7 +79,7 @@ def unpadded_oracle_secret_length(oracle: Oracle) -> int:
     raise ValueError("No change in oracle output. Maybe it isn't padding?")
 
 
-def cut_prefix_oracle(oracle: Oracle, len_prefix: int) -> Oracle:
+def oracle_without_prefix(oracle: Oracle, len_prefix: int) -> Oracle:
     """
     Transform an oracle so that it ignores full blocks containing a prefix
     of the specified length.
