@@ -3,10 +3,9 @@ from collections.abc import Callable
 
 from cryptopals.aes import aes_ecb_encrypt, pad_block
 from cryptopals.analysis import (
-    block_list,
+    break_ecb_suffix,
     first_repeated_block_index,
     random_bytes,
-    unpadded_oracle_secret_length,
 )
 from cryptopals.conversions import from_base64
 
@@ -24,6 +23,7 @@ MAX_PREFIX = 42
 RANDOM_PREFIX = random_bytes(random.randint(MIN_PREFIX, MAX_PREFIX))
 
 
+# This differs from challenge 12 oracle exactly by prepending RANDOM_PREFIX
 def encryption_oracle(plaintext: bytes) -> bytes:
     plaintext = pad_block(RANDOM_PREFIX + plaintext + from_base64(SECRET))
     return aes_ecb_encrypt(plaintext, SECRET_KEY)
@@ -58,50 +58,9 @@ def prefix_length(oracle: Callable[[bytes], bytes]) -> int:
     raise ValueError("Could not determine prefix length")
 
 
-def last_byte_lookup_table(oracle: Callable[[bytes], bytes], known: bytes) -> dict[bytes, bytes]:
-    lookup = {}
-    for b in range(256):
-        block = known + bytes([b])
-        # get first block of ciphertext
-        cipher = oracle(block)[:16]
-        lookup[cipher] = bytes([b])
-    return lookup
-
-
-def solve(oracle: Callable[[bytes], bytes]) -> bytes:
-    cleartext = b""
-    known = b"A" * 15
-    len_unknown = unpadded_oracle_secret_length(oracle)
-    for i in range(len_unknown):
-        lookup = last_byte_lookup_table(oracle, known)
-        offset = 16 - (1 + (len(cleartext) % 16))
-        prefix = b"A" * offset
-        target_block = len(cleartext) // 16
-
-        forced_block = block_list(oracle(prefix))[target_block]
-        if forced_block not in lookup:
-            raise ValueError(
-                f"Ciphertext block ({target_block}) matched no candidate at byte {i} (of {len_unknown})"
-            )
-        uncovered = lookup[forced_block]
-        # add the newly uncovered byte to our cleartext
-        cleartext += uncovered
-        # update the most recent 15 uncovered bytes
-        known = known[1:] + uncovered
-    return cleartext
-
-
 if __name__ == "__main__":
     oracle = cut_prefix_oracle(encryption_oracle, prefix_length(encryption_oracle))
-    result = solve(oracle)
+    result = break_ecb_suffix(oracle)
     print("cleartext ->")
     print(result)
-
-    # oracle = cut_prefix_oracle(encryption_oracle, prefix_length(encryption_oracle))
-    # seed = b"A" * 16
-    # observed = oracle(seed)[:16]
-    # # initial block should match ecb(seed)
-    # expected = aes_ecb_encrypt(seed, SECRET_KEY)
-    # print(observed)
-    # print(expected)
-    # assert observed == expected
+    assert result == from_base64(SECRET)

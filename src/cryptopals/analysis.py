@@ -76,3 +76,43 @@ def unpadded_oracle_secret_length(oracle: Callable[[bytes], bytes]) -> int:
         if len(oracle(bytes(b + 1))) > initial_length:
             return initial_length - (b + 1)
     raise ValueError("No change in oracle output. Maybe it isn't padding?")
+
+
+def last_byte_lookup_table(oracle: Callable[[bytes], bytes], known: bytes) -> dict[bytes, bytes]:
+    """
+    Construct the brute-force table of all possible ciphers when we know
+    the first 15 bytes are known but the last byte is unknown.
+
+    """
+    lookup = {}
+    for b in range(256):
+        block = known + bytes([b])
+        # get first block of ciphertext
+        # TODO assert that len(known) = 15?
+        cipher = oracle(block)[:16]
+        lookup[cipher] = bytes([b])
+    return lookup
+
+
+# Break initially-padded ECB in challenges 12 and 14
+def break_ecb_suffix(oracle: Callable[[bytes], bytes]) -> bytes:
+    cleartext = b""
+    known = b"A" * 15
+    len_unknown = unpadded_oracle_secret_length(oracle)
+    for i in range(len_unknown):
+        lookup = last_byte_lookup_table(oracle, known)
+        offset = 16 - (1 + (len(cleartext) % 16))
+        prefix = b"A" * offset
+        target_block = len(cleartext) // 16
+
+        forced_block = block_list(oracle(prefix))[target_block]
+        if forced_block not in lookup:
+            raise ValueError(
+                f"Ciphertext block ({target_block}) matched no candidate at byte {i} (of {len_unknown})"
+            )
+        uncovered = lookup[forced_block]
+        # add the newly uncovered byte to our cleartext
+        cleartext += uncovered
+        # update the most recent 15 uncovered bytes
+        known = known[1:] + uncovered
+    return cleartext
