@@ -3,7 +3,6 @@ import textwrap
 from collections import Counter
 from collections.abc import Callable
 from itertools import batched, pairwise
-from types import NoneType
 from typing import NamedTuple
 
 from cryptopals.conversions import to_hex
@@ -46,7 +45,7 @@ def detect_ecb(cipher: bytes) -> float:
     return most_frequent / num_blocks
 
 
-def first_repeated_block_index(text: bytes) -> int | NoneType:
+def first_repeated_block_index(text: bytes) -> int | None:
     blocks = block_list(text)
     for i, (curr, succ) in enumerate(pairwise(blocks)):
         if curr == succ:
@@ -131,13 +130,14 @@ def break_ecb_suffix(oracle: Callable[[bytes], bytes]) -> bytes:
     for i in range(len_unknown):
         lookup = last_byte_lookup_table(oracle, known)
         offset = 16 - (1 + (len(cleartext) % 16))
-        prefix = b"A" * offset
+        filler = b"A" * offset
         target_block = len(cleartext) // 16
 
-        forced_block = block_list(oracle(prefix))[target_block]
+        forced_block = block_list(oracle(filler))[target_block]
         if forced_block not in lookup:
             raise ValueError(
-                f"Ciphertext block ({target_block}) matched no candidate at byte {i} (of {len_unknown})"
+                f"Ciphertext block ({target_block}) matched no candidate "
+                f"at byte {i} (of {len_unknown})"
             )
         uncovered = lookup[forced_block]
         # add the newly uncovered byte to our cleartext
