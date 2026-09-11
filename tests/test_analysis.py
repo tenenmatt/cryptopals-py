@@ -1,9 +1,8 @@
-from collections.abc import Callable
-
 import pytest
 
 from cryptopals.aes import pad_block
 from cryptopals.analysis import (
+    Oracle,
     first_repeated_block_index,
     hamming,
     max_repeated_blocks,
@@ -49,7 +48,7 @@ def test_counting_max_repeated_blocks():
     assert max_repeated_blocks(nonrepeating) == 1
 
 
-def oracle_maker(secret: bytes) -> Callable[[bytes], bytes]:
+def oracle_maker(secret: bytes) -> Oracle:
     def oracle(text: bytes) -> bytes:
         return pad_block(text + secret)
 

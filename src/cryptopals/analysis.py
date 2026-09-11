@@ -9,6 +9,8 @@ from cryptopals.conversions import to_hex
 from cryptopals.scoring import score_log_freqs
 from cryptopals.xor import single_key_xor
 
+type Oracle = Callable[[bytes], bytes]
+
 
 class Candidate(NamedTuple):
     key: int
@@ -69,7 +71,7 @@ def pprint(text: bytes):
 
 
 # assumes ECB? also assumes 16-byte block, for now
-def unpadded_oracle_secret_length(oracle: Callable[[bytes], bytes]) -> int:
+def unpadded_oracle_secret_length(oracle: Oracle) -> int:
     initial_length = len(oracle(b""))
     for b in range(16):
         if len(oracle(bytes(b + 1))) > initial_length:
@@ -77,9 +79,7 @@ def unpadded_oracle_secret_length(oracle: Callable[[bytes], bytes]) -> int:
     raise ValueError("No change in oracle output. Maybe it isn't padding?")
 
 
-def cut_prefix_oracle(
-    oracle: Callable[[bytes], bytes], len_prefix: int
-) -> Callable[[bytes], bytes]:
+def cut_prefix_oracle(oracle: Oracle, len_prefix: int) -> Oracle:
     """
     Transform an oracle so that it ignores full blocks containing a prefix
     of the specified length.
@@ -96,7 +96,7 @@ def cut_prefix_oracle(
     return trimmed
 
 
-def prefix_length(oracle: Callable[[bytes], bytes]) -> int:
+def prefix_length(oracle: Oracle) -> int:
     """Determine length of the random prefix prepended by the provided oracle."""
     for i in range(16):
         attack = b"A" * (32 + i)
@@ -106,7 +106,7 @@ def prefix_length(oracle: Callable[[bytes], bytes]) -> int:
     raise ValueError("Could not determine prefix length")
 
 
-def last_byte_lookup_table(oracle: Callable[[bytes], bytes], known: bytes) -> dict[bytes, bytes]:
+def last_byte_lookup_table(oracle: Oracle, known: bytes) -> dict[bytes, bytes]:
     """
     Construct the brute-force table of all possible ciphers when we know
     the first 15 bytes are known but the last byte is unknown.
@@ -123,7 +123,7 @@ def last_byte_lookup_table(oracle: Callable[[bytes], bytes], known: bytes) -> di
 
 
 # Break initially-padded ECB in challenges 12 and 14
-def break_ecb_suffix(oracle: Callable[[bytes], bytes]) -> bytes:
+def break_ecb_suffix(oracle: Oracle) -> bytes:
     cleartext = b""
     known = b"A" * 15
     len_unknown = unpadded_oracle_secret_length(oracle)
