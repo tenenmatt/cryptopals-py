@@ -1,10 +1,10 @@
 import random
-from collections.abc import Callable
 
 from cryptopals.aes import aes_ecb_encrypt, pad_block
 from cryptopals.analysis import (
     break_ecb_suffix,
-    first_repeated_block_index,
+    cut_prefix_oracle,
+    prefix_length,
     random_bytes,
 )
 from cryptopals.conversions import from_base64
@@ -29,36 +29,10 @@ def encryption_oracle(plaintext: bytes) -> bytes:
     return aes_ecb_encrypt(plaintext, SECRET_KEY)
 
 
-def cut_prefix_oracle(
-    oracle: Callable[[bytes], bytes], len_prefix: int
-) -> Callable[[bytes], bytes]:
-    """
-    Transform an oracle so that it ignores full blocks containing a prefix
-    of the specified length.
-
-    """
-    # be careful not to append a wasted extra block prefix is already at a boundary
-    fill = (16 - (len_prefix % 16)) % 16
-    ignored_bytes = len_prefix + fill
-
-    def trimmed(plaintext: bytes) -> bytes:
-        cipher = oracle(b"X" * fill + plaintext)
-        return cipher[ignored_bytes:]
-
-    return trimmed
-
-
-def prefix_length(oracle: Callable[[bytes], bytes]) -> int:
-    """Determine length of the random prefix prepended by the provided oracle."""
-    for i in range(16):
-        attack = b"A" * (32 + i)
-        repeat = first_repeated_block_index(oracle(attack))
-        if repeat is not None:
-            return repeat * 16 - i
-    raise ValueError("Could not determine prefix length")
-
-
 if __name__ == "__main__":
+    # Convert challenge 14 oracle into the oracle from 12, by using prefix_length to work out the size
+    # of the random (hidden) prefix and then ignoring the blocks that contain that prefix.
+    # The resulting oracle produces ciphertext starting with the plaintext it's called with (just like 12).
     oracle = cut_prefix_oracle(encryption_oracle, prefix_length(encryption_oracle))
     result = break_ecb_suffix(oracle)
     print("cleartext ->")

@@ -78,6 +78,35 @@ def unpadded_oracle_secret_length(oracle: Callable[[bytes], bytes]) -> int:
     raise ValueError("No change in oracle output. Maybe it isn't padding?")
 
 
+def cut_prefix_oracle(
+    oracle: Callable[[bytes], bytes], len_prefix: int
+) -> Callable[[bytes], bytes]:
+    """
+    Transform an oracle so that it ignores full blocks containing a prefix
+    of the specified length.
+
+    """
+    # be careful not to append a wasted extra block prefix is already at a boundary
+    fill = (16 - (len_prefix % 16)) % 16
+    ignored_bytes = len_prefix + fill
+
+    def trimmed(plaintext: bytes) -> bytes:
+        cipher = oracle(b"X" * fill + plaintext)
+        return cipher[ignored_bytes:]
+
+    return trimmed
+
+
+def prefix_length(oracle: Callable[[bytes], bytes]) -> int:
+    """Determine length of the random prefix prepended by the provided oracle."""
+    for i in range(16):
+        attack = b"A" * (32 + i)
+        repeat = first_repeated_block_index(oracle(attack))
+        if repeat is not None:
+            return repeat * 16 - i
+    raise ValueError("Could not determine prefix length")
+
+
 def last_byte_lookup_table(oracle: Callable[[bytes], bytes], known: bytes) -> dict[bytes, bytes]:
     """
     Construct the brute-force table of all possible ciphers when we know
