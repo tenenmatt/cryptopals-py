@@ -1,4 +1,4 @@
-from cryptopals.aes import aes_ecb_encrypt, pad_block
+from cryptopals.aes import aes_ecb_encrypt, pkcs7_pad
 from cryptopals.analysis import break_ecb_suffix, random_bytes
 from cryptopals.conversions import from_base64
 
@@ -14,7 +14,7 @@ SECRET_KEY = random_bytes(16)
 
 
 def encryption_oracle(plaintext: bytes) -> bytes:
-    plaintext = pad_block(plaintext + from_base64(SECRET))
+    plaintext = pkcs7_pad(plaintext + from_base64(SECRET))
     return aes_ecb_encrypt(plaintext, SECRET_KEY)
 
 

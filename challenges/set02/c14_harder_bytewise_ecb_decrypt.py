@@ -1,6 +1,6 @@
 import random
 
-from cryptopals.aes import aes_ecb_encrypt, pad_block
+from cryptopals.aes import aes_ecb_encrypt, pkcs7_pad
 from cryptopals.analysis import (
     break_ecb_suffix,
     oracle_without_prefix,
@@ -25,7 +25,7 @@ RANDOM_PREFIX = random_bytes(random.randint(MIN_PREFIX, MAX_PREFIX))
 
 # This differs from challenge 12 oracle exactly by prepending RANDOM_PREFIX
 def encryption_oracle(plaintext: bytes) -> bytes:
-    plaintext = pad_block(RANDOM_PREFIX + plaintext + from_base64(SECRET))
+    plaintext = pkcs7_pad(RANDOM_PREFIX + plaintext + from_base64(SECRET))
     return aes_ecb_encrypt(plaintext, SECRET_KEY)
 
 

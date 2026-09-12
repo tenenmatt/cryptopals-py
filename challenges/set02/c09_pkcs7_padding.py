@@ -1,8 +1,8 @@
-from cryptopals.aes import pad_block
+from cryptopals.aes import pkcs7_pad
 
 
 def solve(block: bytes, size: int):
-    return pad_block(block, size)
+    return pkcs7_pad(block, size)
 
 
 if __name__ == "__main__":

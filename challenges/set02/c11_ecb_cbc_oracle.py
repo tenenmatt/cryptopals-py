@@ -2,7 +2,7 @@ import random
 from enum import Enum
 from typing import NamedTuple
 
-from cryptopals.aes import aes_cbc_encrypt, aes_ecb_encrypt, pad_block
+from cryptopals.aes import aes_cbc_encrypt, aes_ecb_encrypt, pkcs7_pad
 from cryptopals.analysis import max_repeated_blocks, random_bytes
 
 
@@ -21,7 +21,7 @@ def random_affix() -> bytes:
 
 
 def encryption_oracle(plaintext: bytes) -> Oracle:
-    plaintext = pad_block(random_affix() + plaintext + random_affix())
+    plaintext = pkcs7_pad(random_affix() + plaintext + random_affix())
     key = random_bytes(16)
     if random.choice([True, False]):
         return Oracle(Mode.ECB, aes_ecb_encrypt(plaintext, key))

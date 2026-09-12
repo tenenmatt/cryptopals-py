@@ -1,4 +1,4 @@
-from cryptopals.aes import aes_ecb_decrypt, aes_ecb_encrypt, pad_block
+from cryptopals.aes import aes_ecb_decrypt, aes_ecb_encrypt, pkcs7_pad
 from cryptopals.analysis import random_bytes
 
 SECRET_KEY = random_bytes(16)
@@ -21,7 +21,7 @@ def profile_for(email: bytes) -> bytes:
 
 def encrypt_new_profile(email: bytes) -> bytes:
     prof = profile_for(email)
-    return aes_ecb_encrypt(pad_block(prof), SECRET_KEY)
+    return aes_ecb_encrypt(pkcs7_pad(prof), SECRET_KEY)
 
 
 def decrypt_profile(profile: bytes) -> bytes:

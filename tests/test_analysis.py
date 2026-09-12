@@ -1,6 +1,6 @@
 import pytest
 
-from cryptopals.aes import aes_ecb_encrypt, pad_block
+from cryptopals.aes import aes_ecb_encrypt, pkcs7_pad
 from cryptopals.analysis import (
     Oracle,
     break_ecb_suffix,
@@ -63,7 +63,7 @@ def oracle_maker(
 
     def oracle(text: bytes) -> bytes:
         content = prefix + text + secret
-        return aes_ecb_encrypt(pad_block(content), secret_key)
+        return aes_ecb_encrypt(pkcs7_pad(content), secret_key)
 
     return oracle
 
@@ -81,16 +81,16 @@ def test_unpadding_oracle():
 
 def test_first_repeated_block_index():
     repeated = b"A" * 16 * 3
-    empty_prefix = pad_block(b"" + repeated)
+    empty_prefix = pkcs7_pad(b"" + repeated)
     assert first_repeated_block_index(empty_prefix) == 0
 
-    within_first = pad_block(random_bytes(10) + repeated)
+    within_first = pkcs7_pad(random_bytes(10) + repeated)
     assert first_repeated_block_index(within_first) == 1
 
-    within_second = pad_block(random_bytes(19) + repeated)
+    within_second = pkcs7_pad(random_bytes(19) + repeated)
     assert first_repeated_block_index(within_second) == 2
 
-    nonrepeating = pad_block(random_bytes(42))
+    nonrepeating = pkcs7_pad(random_bytes(42))
     assert first_repeated_block_index(nonrepeating) is None
 
 
