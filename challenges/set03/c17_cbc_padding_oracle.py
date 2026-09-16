@@ -1,3 +1,6 @@
+from itertools import batched, pairwise
+from random import choice
+
 from cryptopals.aes import aes_cbc_decrypt, aes_cbc_encrypt, pkcs7_pad, pkcs7_unpad
 from cryptopals.analysis import pprint, random_bytes
 from cryptopals.conversions import from_base64
@@ -31,7 +34,7 @@ def decrypt(cipher: bytes, iv: bytes) -> bytes:
 def choose_cipher() -> tuple[bytes, bytes]:
     iv = random_bytes()
     # choose a candidate (not random yet, while testing a little)
-    plaintext = from_base64(CANDIDATE_PLAINTEXTS[0])
+    plaintext = from_base64(choice(CANDIDATE_PLAINTEXTS))
     return encrypt(plaintext, iv), iv
 
 
@@ -97,3 +100,10 @@ def decode_block(block: bytes, previous: bytes):
             # `previous[r] ^ decoded[r]` is the starting point to which we can fix a padding target with an additional xor
             tampered[r] = previous[r] ^ decoded[r] ^ (padding_target + 1)
     return bytes(decoded)
+
+
+def solve(cipher: bytes, iv: bytes) -> bytes:
+    cleartext = bytearray()
+    for prev, block in pairwise(batched(iv + cipher, 16, strict=True)):
+        cleartext += decode_block(bytes(block), bytes(prev))
+    return bytes(cleartext)
