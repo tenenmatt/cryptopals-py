@@ -4,6 +4,7 @@ from random import choice
 from cryptopals.aes import aes_cbc_decrypt, aes_cbc_encrypt, pkcs7_pad, pkcs7_unpad
 from cryptopals.analysis import pprint, random_bytes
 from cryptopals.conversions import from_base64
+from cryptopals.xor import xor_at
 
 SECRET_KEY = random_bytes()
 
@@ -60,9 +61,7 @@ def xor_byte(text: bytes, pos: int, value: int) -> bytes:
         xor_byte(bytes(range(5)), 2, 4) -> b"\x00\x01\x06\x03\x04"
     changes the 2 at position 2 to a 6 (xor(2, 4))
     """
-    changed = bytearray(text)
-    changed[pos] ^= value
-    return bytes(changed)
+    return xor_at(text, pos, bytes([value]))
 
 
 # Only ever one valid padding outcome (possible false-positives in the terminal position, which we need to check against)

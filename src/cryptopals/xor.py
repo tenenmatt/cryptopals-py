@@ -23,3 +23,22 @@ def repeating_xor(b: bytes, key: bytes) -> bytes:
     For example, if len(b) is 5, it's XOR with "abcab"
     """
     return bytes(c ^ k for c, k in zip(b, cycle(key)))
+
+
+def xor_at(text: bytes, pos: int, delta: bytes) -> bytes:
+    """
+    Given a byte sequence, XOR the bytes starting at pos with delta.
+
+    For example:
+        xor_at(bytes(range(5)), 2, bytes([4, 1])) -> b"\x00\x01\x06\x02\x04"
+    changes the 2 at position 2 to a 6 (xor(2, 4)) and the 3 to 2 (xor(3, 1))
+
+    Change a single byte by calling with a list of one item,
+    like `delta=bytes([42])`
+    """
+    if pos < 0 or pos + len(delta) > len(text):
+        raise ValueError(f"xor_at: [{pos}, {pos + len(delta)}) out of range for length {len(text)}")
+    changed = bytearray(text)
+    for i, d in enumerate(delta):
+        changed[pos + i] ^= d
+    return bytes(changed)

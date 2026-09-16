@@ -2,7 +2,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from cryptopals.xor import repeating_xor, single_key_xor, xor
+from cryptopals.xor import repeating_xor, single_key_xor, xor, xor_at
 
 
 @pytest.mark.parametrize(
@@ -38,3 +38,19 @@ def test_repeating_xor_self_inverse(b, key):
 @given(st.binary(), st.integers(min_value=0, max_value=255))
 def test_single_key_xor_self_inverse(b, key):
     assert single_key_xor(single_key_xor(b, key), key) == b
+
+
+def test_xor_at():
+    # docstring example
+    assert xor_at(bytes(range(5)), 2, bytes([4, 1])) == bytes([0, 1, 6, 2, 4])
+    # single byte
+    assert xor_at(bytes(range(5)), 2, bytes([4])) == bytes([0, 1, 6, 3, 4])
+    # can't use negative bytes
+    with pytest.raises(ValueError):
+        xor_at(b"foo", -1, delta=b"bar")
+    # delta must fit within text starting at pos
+    with pytest.raises(ValueError):
+        xor_at(b"foo", 1, delta=b"bar")
+    # repeated xor returns original
+    repeated = xor_at(xor_at(b"foo", 0, delta=b"bar"), 0, b"bar")
+    assert repeated == b"foo"

@@ -2,7 +2,7 @@ from urllib.parse import quote
 
 from cryptopals.aes import aes_cbc_decrypt, aes_cbc_encrypt, pkcs7_pad
 from cryptopals.analysis import random_bytes
-from cryptopals.xor import xor
+from cryptopals.xor import xor, xor_at
 
 SECRET_KEY = random_bytes(16)
 IV = random_bytes(16)
@@ -52,9 +52,7 @@ def solve() -> bytes:
     # The encode_user_data prefix is exactly two blocks (32 bytes).
     # By construction the first block of our attack_seed is where we'll xor values,
     # so the first of our delta changes should start at index 32.
-    attack_cipher = bytearray(initial_cipher)
-    for i, d in enumerate(delta):
-        attack_cipher[32 + i] ^= d
+    attack_cipher = xor_at(initial_cipher, 32, delta)
 
     # pprint(initial_cipher)
     # pprint(bytes(attack_cipher))
