@@ -97,7 +97,13 @@ def decode_block(block: bytes, previous: bytes):
         decoded[i] = clear
         # now update tampered to set rightward bytes to padding_target+1 for next iteration
         for r in range(i, len_block):
-            # `previous[r] ^ decoded[r]` is the starting point to which we can fix a padding target with an additional xor
+            # setting tampered[r] to `previous[r] ^ decoded[r]` means that
+            # when we xor it with the (hidden) cleartext bit we get 0x00
+            # (previous[r] ^ clear[r] -> decoded[r], so
+            # previous[r] ^ decoded[r] ^ clear[r] -> decoded[r] ^ decoded[r])
+            #
+            # that means we can set the effective cleartext to whatever we
+            # want by appending an xor with the desired value
             tampered[r] = previous[r] ^ decoded[r] ^ (padding_target + 1)
     return bytes(decoded)
 
@@ -106,4 +112,12 @@ def solve(cipher: bytes, iv: bytes) -> bytes:
     cleartext = bytearray()
     for prev, block in pairwise(batched(iv + cipher, 16, strict=True)):
         cleartext += decode_block(bytes(block), bytes(prev))
-    return bytes(cleartext)
+    return pkcs7_unpad(bytes(cleartext))
+
+
+if __name__ == "__main__":
+    cipher, iv = choose_cipher()
+    decoded = solve(cipher, iv)
+    # assert that what we decoded was among the (hidden) cleartext options
+    assert decoded in [from_base64(cand) for cand in CANDIDATE_PLAINTEXTS]
+    print(f"PASS Cleartext was among the candidates: {decoded!r}")
