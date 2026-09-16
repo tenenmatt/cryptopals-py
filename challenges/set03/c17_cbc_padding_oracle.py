@@ -2,7 +2,7 @@ from itertools import batched, pairwise
 from random import choice
 
 from cryptopals.aes import aes_cbc_decrypt, aes_cbc_encrypt, pkcs7_pad, pkcs7_unpad
-from cryptopals.analysis import pprint, random_bytes
+from cryptopals.analysis import random_bytes
 from cryptopals.conversions import from_base64
 from cryptopals.xor import xor_at
 
