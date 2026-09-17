@@ -1,8 +1,9 @@
 from itertools import batched
+from math import ceil
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from cryptopals.xor import xor
+from cryptopals.xor import truncating_xor, xor
 
 
 def aes_ecb_encrypt(text: bytes, key: bytes) -> bytes:
@@ -65,3 +66,27 @@ def aes_cbc_decrypt(text: bytes, key: bytes, iv: bytes) -> bytes:
         cleartext += xor(aes_ecb_decrypt(block, key), last)
         last = block
     return cleartext
+
+
+def aes_ctr_encrypt_counter(key: bytes, nonce: bytes, seq: int) -> bytes:
+    if not len(nonce) == 8:
+        raise ValueError(f"Expected 8-byte nonce (got {len(nonce)})")
+    seq_bytes = seq.to_bytes(8, byteorder="little")
+    segment = nonce + seq_bytes
+    return aes_ecb_encrypt(segment, key)
+
+
+def aes_ctr_keystream(key: bytes, nonce: bytes, length: int) -> bytes:
+    """
+    Build a CTR keystream of at least `length` bytes (rounded to the AES block size)
+
+    """
+    segs = bytearray()
+    for i in range(ceil(length / 16)):
+        segs += aes_ctr_encrypt_counter(key, nonce, i)
+    return bytes(segs)
+
+
+def aes_ctr_cipher(text: bytes, key: bytes, nonce: bytes) -> bytes:
+    keystream = aes_ctr_keystream(key, nonce, len(text))
+    return truncating_xor(text, keystream)

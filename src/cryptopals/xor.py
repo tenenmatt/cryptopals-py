@@ -42,3 +42,14 @@ def xor_at(text: bytes, pos: int, delta: bytes) -> bytes:
     for i, d in enumerate(delta):
         changed[pos + i] ^= d
     return bytes(changed)
+
+
+def truncating_xor(b: bytes, key: bytes) -> bytes:
+    """
+    XOR byte sequence against a key, possibly truncating the key if it's longer than the sequence
+    (as in the case of CTR keystream)
+
+    """
+    if len(b) > len(key):
+        raise ValueError(f"Key string is not long enough ({len(key)}, expected at least {len(b)})")
+    return xor(b, key[: len(b)])
