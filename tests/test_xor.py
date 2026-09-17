@@ -2,7 +2,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from cryptopals.xor import repeating_xor, single_key_xor, xor, xor_at
+from cryptopals.xor import repeating_xor, single_key_xor, truncating_xor, xor, xor_at
 
 
 @pytest.mark.parametrize(
@@ -54,3 +54,27 @@ def test_xor_at():
     # repeated xor returns original
     repeated = xor_at(xor_at(b"foo", 0, delta=b"bar"), 0, b"bar")
     assert repeated == b"foo"
+
+
+def test_truncating_xor():
+    # same bytes zero out
+    assert truncating_xor(b"foo", b"foo") == bytes(3)
+    # result is truncated to the length of b
+    assert truncating_xor(b"fo", b"foo") == bytes(2)  # NOT 3!
+    # key cannot be shorter than b
+    with pytest.raises(ValueError):
+        truncating_xor(b"foo", b"42")
+
+
+@given(st.binary(), st.data())
+def test_truncating_xor_self_inverse(b, data):
+    # fine if the key is longer than the byte sequence (that's what the truncate is for)
+    key = data.draw(st.binary(min_size=len(b)))
+    assert truncating_xor(truncating_xor(b, key), key) == b
+
+
+@given(st.binary(), st.data())
+def test_truncating_xor_recovers_key(b, data):
+    # we lose all information about the key beyond b, so we expect a truncated response
+    key = data.draw(st.binary(min_size=len(b)))
+    assert truncating_xor(truncating_xor(b, key), b) == key[: len(b)]

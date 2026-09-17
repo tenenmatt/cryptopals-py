@@ -1,3 +1,5 @@
+import base64
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -5,6 +7,9 @@ from hypothesis import strategies as st
 from cryptopals.aes import (
     aes_cbc_decrypt,
     aes_cbc_encrypt,
+    aes_ctr_cipher,
+    aes_ctr_encrypt_counter,
+    aes_ctr_keystream,
     aes_ecb_decrypt,
     aes_ecb_encrypt,
     pkcs7_pad,
@@ -15,6 +20,7 @@ from cryptopals.aes import (
 blocks = st.lists(st.binary(min_size=16, max_size=16)).map(b"".join)
 keys = st.binary(min_size=16, max_size=16)
 ivs = st.binary(min_size=16, max_size=16)
+nonces = st.binary(min_size=8, max_size=8)
 
 
 # test that decrypt(encrypt(x)) == x
@@ -126,3 +132,80 @@ def test_pkcs7_unpad_accepts_only_exact_padding(candidate):
     # candidate was validly padded as constructed, so padding
     # the unpadded result should match the original
     assert pkcs7_pad(body) == candidate
+
+
+# Challenge 18 publishes both the ciphertext and (once solved) the plaintext, so
+# their XOR is an outside source of truth for the keystream. Decoded with stdlib
+# base64 and XORed by hand rather than through the project's own conversions/xor,
+# so a bug in those can't mask a bug here.
+C18_KEY = b"YELLOW SUBMARINE"
+C18_NONCE = bytes(8)
+C18_CIPHERTEXT = base64.b64decode(
+    "L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ=="
+)
+C18_PLAINTEXT = b"Yo, VIP Let's kick it Ice, Ice, baby Ice, Ice, baby "
+
+
+@pytest.mark.parametrize(
+    "seq, counter_hex",
+    [
+        (0, "0000000000000000"),
+        (1, "0100000000000000"),  # little-endian: low byte first
+        (255, "ff00000000000000"),
+        (256, "0001000000000000"),
+    ],
+)
+def test_ctr_counter_block_format(seq, counter_hex):
+    """The block fed to AES is nonce || 64-bit *little-endian* seq"""
+    key = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
+    nonce = bytes.fromhex("0011223344556677")
+    # AES is invertible, so decrypting the output recovers the counter block itself
+    block = aes_ecb_decrypt(aes_ctr_encrypt_counter(key, nonce, seq), key)
+    assert block == nonce + bytes.fromhex(counter_hex)
+
+
+@pytest.mark.parametrize("nonce", [b"", bytes(7), bytes(9), bytes(16), bytes(24)])
+def test_ctr_counter_rejects_wrong_nonce_size(nonce):
+    # `match` matters: without the guard, AES raises ValueError on its own for most
+    # of these (wrong block length) -- and accepts a 24-byte nonce outright. Matching
+    # the message is what distinguishes our check from AES's.
+    with pytest.raises(ValueError, match="8-byte nonce"):
+        aes_ctr_encrypt_counter(bytes(16), nonce, 0)
+
+
+def test_ctr_keystream_known_answer():
+    """Pins the counter format end-to-end against challenge 18's published vector"""
+    expected = bytes(p ^ c for p, c in zip(C18_PLAINTEXT, C18_CIPHERTEXT, strict=True))
+    keystream = aes_ctr_keystream(C18_KEY, C18_NONCE, len(expected))
+    assert keystream[: len(expected)] == expected
+
+
+@pytest.mark.parametrize(
+    "length, expected", [(0, 0), (1, 16), (16, 16), (17, 32), (52, 64), (64, 64)]
+)
+def test_ctr_keystream_rounds_up_to_block_size(length, expected):
+    """Keystream may be longer than `length`, always rounded to the block size"""
+    assert len(aes_ctr_keystream(bytes(16), bytes(8), length)) == expected
+
+
+def test_ctr_cipher_known_answer():
+    assert aes_ctr_cipher(C18_CIPHERTEXT, C18_KEY, C18_NONCE) == C18_PLAINTEXT
+
+
+@given(st.binary(), keys, nonces)
+def test_ctr_cipher_is_its_own_inverse(text, key, nonce):
+    """Encryption and decryption are the same operation"""
+    assert aes_ctr_cipher(aes_ctr_cipher(text, key, nonce), key, nonce) == text
+
+
+@given(st.binary(), keys, nonces)
+def test_ctr_cipher_preserves_length(text, key, nonce):
+    """Unlike CBC, no padding: lengths that aren't a multiple of 16 stay exact"""
+    assert len(aes_ctr_cipher(text, key, nonce)) == len(text)
+
+
+@given(st.integers(min_value=0, max_value=64), keys, nonces)
+def test_ctr_encrypting_zeros_yields_keystream(length, key, nonce):
+    """XOR against zero is the identity, so an oracle handed nulls leaks the keystream"""
+    keystream = aes_ctr_keystream(key, nonce, length)
+    assert aes_ctr_cipher(bytes(length), key, nonce) == keystream[:length]
