@@ -30,7 +30,7 @@ def _lowest_32(val: int) -> int:
 
 class MersenneTwister:
     def __init__(self):
-        self.MT = [0 for _ in range(N)]
+        self.state = [0 for _ in range(N)]
         self.index = N + 1
 
     def initialize_generator(self, seed: int):
@@ -38,12 +38,12 @@ class MersenneTwister:
             raise ValueError(f"Expected non-negative seed (got {seed})")
         if seed >= 2**32:
             raise ValueError(f"Seed must be 32 bits (got {seed})")
-        self.MT[0] = seed
+        self.state[0] = seed
         for i in range(1, N):
-            last = self.MT[i - 1]
+            last = self.state[i - 1]
             recurrence = INIT_F * (last ^ (last >> 30)) + i
             # ensure we take the lowest 32 bits
-            self.MT[i] = _lowest_32(recurrence)
+            self.state[i] = _lowest_32(recurrence)
         self.index = N
 
     def twist(self):
@@ -54,15 +54,15 @@ class MersenneTwister:
         for i in range(N):
             # Concatenate the upper bit of i and the lower bits of (i+1) mod n
             next_index = (i + 1) % N
-            upper_bit = self.MT[i] & upper_mask
-            lower_bits = self.MT[next_index] & lower_mask
+            upper_bit = self.state[i] & upper_mask
+            lower_bits = self.state[next_index] & lower_mask
             x = upper_bit | lower_bits
             xA = x >> 1
             if (x & 1) != 0:  # lowest bit is 1
                 xA ^= A
             # twist around m
             mid_index = (i + M) % N
-            self.MT[i] = self.MT[mid_index] ^ xA
+            self.state[i] = self.state[mid_index] ^ xA
 
     def extract_number(self) -> int:
         if self.index >= N:
@@ -71,7 +71,7 @@ class MersenneTwister:
             self.twist()
             self.index = 0
 
-        y = self.MT[self.index]
+        y = self.state[self.index]
         self.index += 1
 
         # temper (to improve distribution)

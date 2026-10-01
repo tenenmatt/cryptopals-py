@@ -22,7 +22,7 @@ def test_against_reference():
         twister.initialize_generator(seed)
         r = random.Random()
         # version 3 state with my twister internals
-        state = (3, tuple(twister.MT) + (624,), None)
+        state = (3, tuple(twister.state) + (624,), None)
         r.setstate(state)
         iterations = 2000
         ours = [twister.extract_number() for _ in range(iterations)]
