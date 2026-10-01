@@ -1,6 +1,8 @@
 """
 Mersenne Twister implementation
 
+MersenneTwister is an iterator, where `next` provides the next random MT19937 integer
+
 """
 
 import collections.abc
@@ -31,7 +33,7 @@ def _lowest_32(val: int) -> int:
 
 
 class MersenneTwister(collections.abc.Iterator[int]):
-    def __init__(self, seed):
+    def __init__(self, seed: int):
         self.state = [0 for _ in range(N)]
         self.index = N
         self.initialize_generator(seed)
@@ -49,7 +51,7 @@ class MersenneTwister(collections.abc.Iterator[int]):
             self.state[i] = _lowest_32(recurrence)
         self.index = N
 
-    def twist(self):
+    def _twist(self):
         lower_mask = (1 << R) - 1
         # must explicitly mask against 32 bits to get fixed-width negation
         # (python ints use two's complement)
@@ -61,16 +63,16 @@ class MersenneTwister(collections.abc.Iterator[int]):
             lower_bits = self.state[next_index] & lower_mask
             x = upper_bit | lower_bits
             xA = x >> 1
-            if (x & 1) != 0:  # lowest bit is 1
+            if x & 1:  # lowest bit is 1
                 xA ^= A
             # twist around m
             mid_index = (i + M) % N
             self.state[i] = self.state[mid_index] ^ xA
 
-    # Extract number
-    def rand(self) -> int:
+    # Iteration extracts the next random number
+    def __next__(self) -> int:
         if self.index >= N:
-            self.twist()
+            self._twist()
             self.index = 0
 
         y = self.state[self.index]
@@ -84,8 +86,3 @@ class MersenneTwister(collections.abc.Iterator[int]):
 
         # temper-related masking above will constrain this to 32 bit fixed-width
         return y
-
-    # It's natural to support iteration
-
-    def __next__(self) -> int:
-        return self.rand()
