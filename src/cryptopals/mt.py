@@ -3,6 +3,8 @@ Mersenne Twister implementation
 
 """
 
+import collections.abc
+
 # Parameters for MT19937
 N = 624  # state size (degree of recurrence)
 M = 397  # middle word
@@ -28,9 +30,10 @@ def _lowest_32(val: int) -> int:
     return val & 0xFFFFFFFF
 
 
-class MersenneTwister:
-    def __init__(self, seed: int = 0):
+class MersenneTwister(collections.abc.Iterator[int]):
+    def __init__(self, seed):
         self.state = [0 for _ in range(N)]
+        self.index = N
         self.initialize_generator(seed)
 
     def initialize_generator(self, seed: int):
@@ -67,8 +70,6 @@ class MersenneTwister:
     # Extract number
     def rand(self) -> int:
         if self.index >= N:
-            if self.index > N:
-                raise ValueError("Generator was never initialized")
             self.twist()
             self.index = 0
 
@@ -86,8 +87,5 @@ class MersenneTwister:
 
     # It's natural to support iteration
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
+    def __next__(self) -> int:
         return self.rand()
