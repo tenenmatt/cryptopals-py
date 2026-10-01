@@ -64,7 +64,8 @@ class MersenneTwister:
             mid_index = (i + M) % N
             self.state[i] = self.state[mid_index] ^ xA
 
-    def extract_number(self) -> int:
+    # Extract number
+    def rand(self) -> int:
         if self.index >= N:
             if self.index > N:
                 raise ValueError("Generator was never initialized")
@@ -83,16 +84,10 @@ class MersenneTwister:
         # temper-related masking above will constrain this to 32 bit fixed-width
         return y
 
+    # It's natural to support iteration
 
-# construct an instance to support module functions
+    def __iter__(self):
+        return self
 
-_TWISTER = MersenneTwister()
-_TWISTER.initialize_generator(0)
-
-
-def seed(seed: int):
-    _TWISTER.initialize_generator(seed)
-
-
-def rand() -> int:
-    return _TWISTER.extract_number()
+    def __next__(self):
+        return self.rand()
