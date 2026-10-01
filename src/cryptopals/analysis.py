@@ -30,6 +30,34 @@ def hamming(a: bytes, b: bytes) -> int:
     return sum((ai ^ bi).bit_count() for ai, bi in zip(a, b, strict=True))
 
 
+def best_xor_by_column(texts: list[bytes]) -> bytes:
+    """
+    Guess the best bytes that xor with columns of a collection of equal-length texts.
+
+    For a result R, R[i] is the byte that produces the best looking distribution
+    when xor'd against T[i] for each T in texts (we can think of this as the
+    "i-th column" of our texts).
+
+    This will raise when texts are missing or unequal lengths.
+
+    Letter-only columns cannot distinguish k from k ^ 0x20 (the decryptions
+    differ only in case); either may be returned.
+
+    """
+    if len(texts) == 0 or all(len(t) == 0 for t in texts):
+        raise ValueError("No texts to operate on")
+    if len(set(len(t) for t in texts)) > 1:
+        raise ValueError("Texts must be equal lengths")
+    candidate = list()
+    # strict=True because we expect texts to be the same length
+    cols = [bytes(c) for c in zip(*texts, strict=True)]
+    for col in cols:
+        # naively choose the highest score with the default scorer for rank_single
+        top = rank_single_byte_xor(col)[0]
+        candidate.append(top.key)
+    return bytes(candidate)
+
+
 def max_repeated_blocks(cipher: bytes) -> int:
     blocks = batched(cipher, 16, strict=True)
     counts = Counter(blocks)

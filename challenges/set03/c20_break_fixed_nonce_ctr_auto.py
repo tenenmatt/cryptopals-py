@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from cryptopals.aes import aes_ctr_cipher
-from cryptopals.analysis import Candidate, random_bytes, rank_single_byte_xor
+from cryptopals.analysis import best_xor_by_column, random_bytes, rank_single_byte_xor
 from cryptopals.conversions import from_base64
 from cryptopals.xor import repeating_xor
 
@@ -29,20 +29,9 @@ def ciphers() -> list[bytes]:
     return [aes_ctr_cipher(ln, KEY, NONCE) for ln in truncated]
 
 
-def best_by_column(texts: list[bytes]) -> bytes:
-    candidate = list()
-    # strict=True because we expect texts to be the same length, by this point
-    cols = [bytes(c) for c in zip(*texts, strict=True)]
-    for col in cols:
-        # naively choose the highest score for now
-        top = rank_single_byte_xor(col)[0]
-        candidate.append(top.key)
-    return bytes(candidate)
-
-
 if __name__ == "__main__":
     ciphertexts = ciphers()
-    keystream = best_by_column(ciphertexts)
+    keystream = best_xor_by_column(ciphertexts)
     decoded = [repeating_xor(c, keystream) for c in ciphertexts]
     print("Decoded ciphertext initial segments (truncated to shortest length)")
     for d in decoded:

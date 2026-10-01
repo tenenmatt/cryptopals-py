@@ -3,6 +3,7 @@ import pytest
 from cryptopals.aes import aes_ecb_encrypt, pkcs7_pad
 from cryptopals.analysis import (
     Oracle,
+    best_xor_by_column,
     break_ecb_suffix,
     first_repeated_block_index,
     hamming,
@@ -44,6 +45,65 @@ def test_ranking_uses_scorer():
 
 def test_hamming():
     assert hamming(b"this is a test", b"wokka wokka!!!") == 37
+
+
+def test_best_columnwise_fails_with_no_texts():
+    # empty list of texts
+    with pytest.raises(ValueError, match="No texts"):
+        best_xor_by_column([])
+    # list of empty texts
+    with pytest.raises(ValueError, match="No texts"):
+        best_xor_by_column([b"", b"", b""])
+
+
+def test_best_columnwise_fails_unequal_lengths():
+    texts = [
+        b"one two three four",
+        b"five six seven eight",
+    ]
+    with pytest.raises(ValueError, match="must be equal length"):
+        best_xor_by_column(texts)
+
+
+def columnar_ciphertexts(sample: bytes, key: bytes) -> list[bytes]:
+    """
+    Rotations of sample, truncated to len(key), each xor'd with key.
+
+    Rows rotate the sample text, so each column is a permutation of the sample
+    (which maintains the character frequency), xor'd with one key byte.
+    Truncating to len(key) keeps `texts` from being square whenever
+    len(key) < len(sample).
+
+    """
+    width = len(key)
+    rows = [(sample[i:] + sample[:i])[:width] for i in range(len(sample))]
+    return [bytes(r ^ k for r, k in zip(row, key, strict=True)) for row in rows]
+
+
+def test_best_xor_by_column():
+    # a fragment of english to start from
+    # (which matters because underneath we're scoring on english letter frequency)
+    sample = b"It was the best of times, it was the worst of times"
+    # an expected key value
+    known_key = b"YelLoW suBmarinE"
+    texts = columnar_ciphertexts(sample, known_key)
+
+    # best_xor_by_column should return a value matching known_key
+    key = best_xor_by_column(texts)
+    assert key == known_key
+
+
+def test_best_xor_by_column_letter_only_is_case_ambiguous():
+    # Without spaces or punctuation, k and k ^ 0x20 decrypt each column to the
+    # same text up to case, and the scorer lowercases: an exact tie, every column.
+    # Only promise the key up to case; which one wins is not part of the contract.
+    sample = b"Itwasthebestoftimesitwastheworstoftimes"
+    known_key = b"YelLoW suBmarinE"
+    texts = columnar_ciphertexts(sample, known_key)
+
+    key = best_xor_by_column(texts)
+    for got, k in zip(key, known_key, strict=True):
+        assert got in (k, k ^ 0x20)
 
 
 def test_counting_max_repeated_blocks():

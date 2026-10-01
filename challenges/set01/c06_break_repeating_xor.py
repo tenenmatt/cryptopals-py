@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from itertools import batched, islice, pairwise
 from pathlib import Path
 
-from cryptopals.analysis import hamming, rank_single_byte_xor
+from cryptopals.analysis import best_xor_by_column, hamming, rank_single_byte_xor
 from cryptopals.conversions import from_base64
 from cryptopals.scoring import score_log_freqs
 from cryptopals.xor import repeating_xor
@@ -50,10 +50,8 @@ def solve(cipher: bytes) -> list[Decoded]:
     for size in key_sizes:
         # break into size chunks, transpose, solve each column, combine top keys
         # (exclude short chunks, which break the transposition)
-        chunks = [x for x in batched(cipher, size, strict=False) if len(x) == size]
-        segments = [bytes(x) for x in zip(*chunks, strict=True)]
-        top_per_segment = [rank_single_byte_xor(seg)[0] for seg in segments]
-        key = bytes(x.key for x in top_per_segment)
+        chunks = [bytes(x) for x in batched(cipher, size, strict=False) if len(x) == size]
+        key = best_xor_by_column(chunks)
         print(f"try key {key} ({size})")
         # try this key on full ciphertext
         cleartext = repeating_xor(cipher, key)
