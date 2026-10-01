@@ -18,8 +18,7 @@ def test_known_outcomes():
 
 def test_against_reference():
     for seed in [0, 0xC0FFE3, 2**32 - 1]:
-        twister = mt.MersenneTwister()
-        twister.initialize_generator(seed)
+        twister = mt.MersenneTwister(seed)
         r = random.Random()
         # version 3 state with my twister internals
         state = (3, tuple(twister.state) + (624,), None)

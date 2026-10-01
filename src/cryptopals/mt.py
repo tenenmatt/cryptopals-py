@@ -29,9 +29,9 @@ def _lowest_32(val: int) -> int:
 
 
 class MersenneTwister:
-    def __init__(self):
+    def __init__(self, seed: int = 0):
         self.state = [0 for _ in range(N)]
-        self.index = N + 1
+        self.initialize_generator(seed)
 
     def initialize_generator(self, seed: int):
         if seed < 0:
