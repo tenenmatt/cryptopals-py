@@ -6,6 +6,7 @@ MersenneTwister is an iterator, where `next` provides the next random MT19937 in
 """
 
 import collections.abc
+import math
 
 # Parameters for MT19937
 N = 624  # state size (degree of recurrence)
@@ -79,10 +80,57 @@ class MersenneTwister(collections.abc.Iterator[int]):
         self.index += 1
 
         # temper (to improve distribution)
-        y ^= (y >> U) & D
-        y ^= (y << S) & B
-        y ^= (y << T) & C
-        y ^= y >> L
+        return temper(y)
 
-        # temper-related masking above will constrain this to 32 bit fixed-width
-        return y
+
+# Pull tempering out of the twister class definition,
+# to make it easier to test untemper for #23
+# (there's nothing about the temper behavior that depends on class state)
+
+
+def temper(y: int) -> int:
+    _u32_check(y)
+    y ^= (y >> U) & D
+    y ^= (y << S) & B
+    y ^= (y << T) & C
+    y ^= y >> L
+
+    # temper-related masking above will constrain this to 32 bit fixed-width
+    return y
+
+
+def untemper(y: int) -> int:
+    _u32_check(y)
+    y = _invert_right_shift_xor(y, L)
+    y = _invert_left_shift_xor(y, T, C)
+    y = _invert_left_shift_xor(y, S, B)
+    y = _invert_right_shift_xor(y, U)
+    return y
+
+
+def _u32_check(y: int):
+    if y >= 2**32:
+        raise ValueError(f"Expected a 32 bit value (got {y})")
+    if y < 0:
+        raise ValueError(f"Expected a non-negative value (got {y})")
+
+
+def _invert_right_shift_xor(z: int, shift: int) -> int:
+    # number of iterations is related to the size of shift,
+    # the top `shift` worth of bits are already y,
+    # and we uncover `shift` many "true" y bits incrementally
+    # with each iteration. If we divide 32 bits
+    # into blocks of width `shift`, we get the first
+    # "for free", and need as many iterations as
+    # cover the remaining `32 - shift` bits.
+    zi = z
+    for _ in range(math.ceil(32 / shift) - 1):
+        zi = z ^ (zi >> shift)
+    return zi
+
+
+def _invert_left_shift_xor(z: int, shift: int, mask: int) -> int:
+    zi = z
+    for _ in range(math.ceil(32 / shift) - 1):
+        zi = z ^ (mask & (zi << shift))
+    return zi

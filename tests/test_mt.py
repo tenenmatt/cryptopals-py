@@ -1,7 +1,9 @@
 import random
 from itertools import islice
 
+import hypothesis.strategies as st
 import pytest
+from hypothesis import example, given
 
 import cryptopals.mt as mt
 
@@ -35,3 +37,30 @@ def test_seed_out_of_range():
         mt.MersenneTwister(-1)
     with pytest.raises(ValueError, match="must be 32 bits"):
         mt.MersenneTwister(2**32)
+
+
+@given(st.integers(min_value=0, max_value=2**32 - 1))
+@example(2**32 - 1)
+def test_untemper_identity(y):
+    assert mt.untemper(mt.temper(y)) == y
+
+
+# Both tempering and untempering are combinations of shifts and xor,
+# 0 stays stable under all operations.
+def test_fixed_point_at_zero():
+    assert mt.temper(0) == 0
+    assert mt.untemper(0) == 0
+
+
+def test_untemper_boundaries():
+    with pytest.raises(ValueError, match="a 32 bit value"):
+        mt.untemper(2**32)
+    with pytest.raises(ValueError, match="non-negative value"):
+        mt.untemper(-1)
+
+
+def test_temper_boundaries():
+    with pytest.raises(ValueError, match="a 32 bit value"):
+        mt.temper(2**32)
+    with pytest.raises(ValueError, match="non-negative value"):
+        mt.temper(-1)
